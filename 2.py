@@ -66,15 +66,10 @@ with col2:
     active_member = st.selectbox("Is Active Member", [0, 1])
     salary = st.number_input("Estimated Salary", 0.0, 200000.0, 50000.0)
 
-# -------------------------------------------------
-# Prediction History
-# -------------------------------------------------
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# -------------------------------------------------
-# Predict Button
-# -------------------------------------------------
+
 if st.button("🔮 Predict Churn", use_container_width=True):
 
     gender_val = 1 if gender == "Male" else 0
@@ -101,7 +96,7 @@ if st.button("🔮 Predict Churn", use_container_width=True):
         st.success(f"✅ Customer will NOT churn ({100 - churn_percent:.2f}%)")
         result = "No Churn"
 
-    # Save history
+
     st.session_state.history.append({
         "Geography": geography,
         "Age": age,
@@ -111,9 +106,7 @@ if st.button("🔮 Predict Churn", use_container_width=True):
         "Prediction": result
     })
 
-# -------------------------------------------------
-# Show Prediction History
-# -------------------------------------------------
+
 if st.session_state.history:
     st.subheader("📜 Prediction History")
     history_df = pd.DataFrame(st.session_state.history)
