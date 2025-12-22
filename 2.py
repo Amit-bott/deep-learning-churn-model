@@ -26,24 +26,20 @@ y = df["Exited"]
 le = LabelEncoder()
 X["Gender"] = le.fit_transform(X["Gender"])
 
-# OneHot Geography
 ct = ColumnTransformer(
     transformers=[("geo", OneHotEncoder(drop="first"), ["Geography"])],
     remainder="passthrough"
 )
 X = ct.fit_transform(X)
 
-# Scaling
+
 sc = StandardScaler()
 X = sc.fit_transform(X)
 
-# Model accuracy
 y_pred = (model.predict(X) > 0.5).astype(int)
 accuracy = accuracy_score(y, y_pred)
 
-# -------------------------------------------------
-# UI Header
-# -------------------------------------------------
+
 st.title("🏦 Bank Customer Churn Prediction")
 st.caption("Deep Learning ANN Model | Real-time Prediction")
 
@@ -51,9 +47,7 @@ st.metric("📊 Model Accuracy", f"{accuracy*100:.2f}%")
 
 st.divider()
 
-# -------------------------------------------------
-# Input Section
-# -------------------------------------------------
+
 st.subheader("🔍 Enter Customer Details")
 
 col1, col2 = st.columns(2)
