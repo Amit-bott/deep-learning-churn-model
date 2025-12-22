@@ -8,30 +8,21 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.metrics import accuracy_score
 
-# -------------------------------------------------
-# Page Config
-# -------------------------------------------------mlkj
+
 st.set_page_config(
     page_title="ANN Churn Prediction",
     page_icon="🏦",
     layout="centered"
 )
 
-# -------------------------------------------------
-# Load Model
-# -------------------------------------------------
 model = load_model("model.h5")
 
-# -------------------------------------------------
-# Load & Prepare Data (for encoders & accuracy)
-# -------------------------------------------------
 df = pd.read_csv("Churn_Modelling.csv")
 df = df.drop(columns=["RowNumber", "CustomerId", "Surname"])
 
 X = df.drop("Exited", axis=1)
 y = df["Exited"]
 
-# Encode Gender
 le = LabelEncoder()
 X["Gender"] = le.fit_transform(X["Gender"])
 
