@@ -116,76 +116,144 @@
 
 
 
-# dashboard.py
+
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 import pickle
-from sklearn.preprocessing import StandardScaler
 import plotly.express as px
+import plotly.graph_objects as go
+import shap
 
-# ————————————————
-# Load Data & Model
-# ————————————————
-@st.cache_data
-def load_data():
-    data = pd.read_csv("Churn_Modelling.csv")
-    return data
+# ---------------------------
+# Page Config
+# ---------------------------
+st.set_page_config(
+    page_title="Churn Prediction Dashboard",
+    page_icon="📉",
+    layout="wide"
+)
 
+# ---------------------------
+# Load Model & Data
+# ---------------------------
 @st.cache_resource
 def load_model():
-    with open("model.pkl", "rb") as f:
-        model = pickle.load(f)
-    return model
+    with open("scaler.pkl", "rb") as f:
+        return pickle.load(f)
 
-data = load_data()
+@st.cache_resource
+def load_scaler():
+    with open("scaler.pkl", "rb") as f:
+        return pickle.load(f)
+
+@st.cache_data
+def load_data():
+    return pd.read_csv("Churn_Modelling.csv")
+
 model = load_model()
+scaler = load_scaler()
+data = load_data()
 
-# ————————————————
-# Sidebar - User Inputs
-# ————————————————
-st.sidebar.header("Select Customer Features")
+# ---------------------------
+# Sidebar Inputs
+# ---------------------------
+st.sidebar.title("🧑 Customer Details")
 
-def user_input_features():
-    credit_score = st.sidebar.slider("Credit Score", int(data.CreditScore.min()), int(data.CreditScore.max()), int(data.CreditScore.mean()))
-    age = st.sidebar.slider("Age", int(data.Age.min()), int(data.Age.max()), int(data.Age.mean()))
-    tenure = st.sidebar.slider("Tenure", int(data.Tenure.min()), int(data.Tenure.max()), int(data.Tenure.mean()))
-    balance = st.sidebar.number_input("Balance", float(data.Balance.min()), float(data.Balance.max()), float(data.Balance.mean()))
-    estimated_salary = st.sidebar.number_input("Estimated Salary", float(data.EstimatedSalary.min()), float(data.EstimatedSalary.max()), float(data.EstimatedSalary.mean()))
-    
-    return pd.DataFrame({
-        "CreditScore":[credit_score],
-        "Age":[age],
-        "Tenure":[tenure],
-        "Balance":[balance],
-        "EstimatedSalary":[estimated_salary]
-    })
+credit = st.sidebar.slider("Credit Score", 350, 850, 650)
+age = st.sidebar.slider("Age", 18, 92, 35)
+tenure = st.sidebar.slider("Tenure (Years)", 0, 10, 5)
+balance = st.sidebar.number_input("Balance", 0.0, 300000.0, 50000.0)
+salary = st.sidebar.number_input("Estimated Salary", 10000.0, 200000.0, 50000.0)
 
-input_df = user_input_features()
+input_df = pd.DataFrame({
+    "CreditScore": [credit],
+    "Age": [age],
+    "Tenure": [tenure],
+    "Balance": [balance],
+    "EstimatedSalary": [salary]
+})
 
-# ————————————————
-# Main Dashboard
-# ————————————————
-st.title("📊 Customer Churn Prediction Dashboard")
-st.markdown("Enter customer info in the left sidebar to predict churn probability.")
+scaled_input = scaler.transform(input_df)
 
-# Show first few rows of the dataset
-if st.checkbox("Show raw data"):
-    st.write(data.head())
-
+# ---------------------------
 # Prediction
-prediction = model.predict(input_df)
-prediction_proba = model.predict_proba(input_df)[:,1]
+# ---------------------------
+prediction = model.predict(scaled_input)[0][0]
+churn_prob = float(prediction)
 
-st.subheader("Prediction")
-st.write("🔴 **Churn**" if prediction[0]==1 else "🟢 **Not Churn**")
+# ---------------------------
+# Header
+# ---------------------------
+st.title("📊 Customer Churn Prediction – Deep Learning Dashboard")
+st.markdown("**AI-powered system to identify customers likely to leave the bank**")
 
-st.subheader("Churn Probability")
-fig = px.bar(x=["Chance to Churn"], y=prediction_proba, labels={"x":"Metric", "y":"Probability"})
-st.plotly_chart(fig)
+# ---------------------------
+# KPI Cards
+# ---------------------------
+col1, col2, col3 = st.columns(3)
 
-# Feature Analysis
-st.subheader("Feature Distributions")
-for col in ["CreditScore","Age","Balance"]:
-    fig2 = px.histogram(data, x=col, color="Exited", nbins=30, title=f"{col} distribution by churn")
-    st.plotly_chart(fig2)
+with col1:
+    st.metric("Total Customers", data.shape[0])
+
+with col2:
+    st.metric("Churn Rate", f"{data.Exited.mean()*100:.2f}%")
+
+with col3:
+    st.metric("Model Confidence", f"{churn_prob*100:.2f}%")
+
+# ---------------------------
+# Prediction Result
+# ---------------------------
+st.subheader("🔮 Prediction Result")
+
+if churn_prob > 0.5:
+    st.error(f"⚠ Customer is likely to CHURN ({churn_prob*100:.2f}%)")
+else:
+    st.success(f"✅ Customer will NOT churn ({churn_prob*100:.2f}%)")
+
+# ---------------------------
+# Probability Gauge
+# ---------------------------
+fig = go.Figure(go.Indicator(
+    mode="gauge+number",
+    value=churn_prob * 100,
+    title={"text": "Churn Probability (%)"},
+    gauge={
+        "axis": {"range": [0, 100]},
+        "bar": {"color": "red"},
+        "steps": [
+            {"range": [0, 50], "color": "lightgreen"},
+            {"range": [50, 100], "color": "pink"}
+        ],
+    }
+))
+st.plotly_chart(fig, use_container_width=True)
+
+# ---------------------------
+# Data Analysis Section
+# ---------------------------
+st.subheader("📈 Dataset Insights")
+
+col4, col5 = st.columns(2)
+
+with col4:
+    fig_age = px.histogram(data, x="Age", color="Exited", title="Age vs Churn")
+    st.plotly_chart(fig_age, use_container_width=True)
+
+with col5:
+    fig_balance = px.box(data, x="Exited", y="Balance", title="Balance Distribution")
+    st.plotly_chart(fig_balance, use_container_width=True)
+
+# ---------------------------
+# SHAP Explainability
+# ---------------------------
+st.subheader("🧠 Model Explainability (SHAP)")
+
+explainer = shap.Explainer(model, scaled_input)
+shap_values = explainer(scaled_input)
+
+st.write("Feature contribution to churn prediction:")
+shap.plots.waterfall(shap_values[0], show=False)
+st.pyplot(bbox_inches='tight')
