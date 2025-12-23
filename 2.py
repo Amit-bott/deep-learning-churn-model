@@ -15,7 +15,7 @@ st.set_page_config(
     layout="centered"
 )
 
-model = load_model("model.h5")
+model = load_model("Churn_Modelling_ANN.h5")
 
 df = pd.read_csv("Churn_Modelling.csv")
 df = df.drop(columns=["RowNumber", "CustomerId", "Surname"])
@@ -51,7 +51,6 @@ st.divider()
 st.subheader("🔍 Enter Customer Details")
 
 col1, col2 = st.columns(2)
-
 with col1:
     geography = st.selectbox("Geography", ["France", "Germany", "Spain"])
     credit_score = st.number_input("Credit Score", 300, 900, 650)
