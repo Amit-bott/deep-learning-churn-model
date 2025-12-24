@@ -117,143 +117,174 @@
 
 
 
-
 import streamlit as st
-import pandas as pd
 import numpy as np
-import pickle
+import pandas as pd
+import joblib
+from tensorflow.keras.models import load_model
 import plotly.express as px
-import plotly.graph_objects as go
-import shap
 
-# ---------------------------
-# Page Config
-# ---------------------------
+# -----------------------------
+# PAGE CONFIG
+# -----------------------------
 st.set_page_config(
-    page_title="Churn Prediction Dashboard",
-    page_icon="📉",
+    page_title="Customer Churn Prediction",
+    page_icon="📊",
     layout="wide"
 )
 
-# ---------------------------
-# Load Model & Data
-# ---------------------------
+# -----------------------------
+# LOAD MODEL & SCALER
+# -----------------------------
 @st.cache_resource
-def load_model():
-    with open("scaler.pkl", "rb") as f:
-        return pickle.load(f)
+def load_assets():
+    # model = load_model("model.h5")
+    model = load_model("models/churn_Modelling.csv.h5")
+    # scaler = joblib.load("scaler.pkl")
+    scaler = joblib.load("models/scaler.pkl")
+    return model, scaler
 
-@st.cache_resource
-def load_scaler():
-    with open("scaler.pkl", "rb") as f:
-        return pickle.load(f)
+model, scaler = load_assets()
 
-@st.cache_data
-def load_data():
-    return pd.read_csv("Churn_Modelling.csv")
+# -----------------------------
+# SIDEBAR
+# -----------------------------
+st.sidebar.title("📌 Navigation")
+menu = st.sidebar.radio(
+    "Go to",
+    ["Home", "Single Prediction", "Batch Prediction", "Insights"]
+)
 
-model = load_model()
-scaler = load_scaler()
-data = load_data()
+# -----------------------------
+# HOME PAGE
+# -----------------------------
+if menu == "Home":
+    st.title("📊 Customer Churn Prediction Dashboard")
 
-# ---------------------------
-# Sidebar Inputs
-# ---------------------------
-st.sidebar.title("🧑 Customer Details")
+    st.markdown("""
+    ### 🔍 Project Overview
+    This application predicts **customer churn** using a **Deep Learning (ANN) model**.
+    It helps businesses identify customers likely to leave and take preventive action.
 
-credit = st.sidebar.slider("Credit Score", 350, 850, 650)
-age = st.sidebar.slider("Age", 18, 92, 35)
-tenure = st.sidebar.slider("Tenure (Years)", 0, 10, 5)
-balance = st.sidebar.number_input("Balance", 0.0, 300000.0, 50000.0)
-salary = st.sidebar.number_input("Estimated Salary", 10000.0, 200000.0, 50000.0)
+    ### 🧠 Model
+    - Artificial Neural Network (ANN)
+    - Trained on historical customer behavior data
+    - Outputs churn probability and prediction
 
-input_df = pd.DataFrame({
-    "CreditScore": [credit],
-    "Age": [age],
-    "Tenure": [tenure],
-    "Balance": [balance],
-    "EstimatedSalary": [salary]
-})
+    ### 🚀 Features
+    - Single customer prediction
+    - Bulk CSV prediction
+    - Visual analytics & KPIs
+    - Production-ready UI
+    """)
 
-scaled_input = scaler.transform(input_df)
+    st.success("✔ Model loaded successfully")
 
-# ---------------------------
-# Prediction
-# ---------------------------
-prediction = model.predict(scaled_input)[0][0]
-churn_prob = float(prediction)
+# -----------------------------
+# SINGLE PREDICTION
+# -----------------------------
+elif menu == "Single Prediction":
+    st.title("🔮 Single Customer Prediction")
 
-# ---------------------------
-# Header
-# ---------------------------
-st.title("📊 Customer Churn Prediction – Deep Learning Dashboard")
-st.markdown("**AI-powered system to identify customers likely to leave the bank**")
+    col1, col2, col3 = st.columns(3)
 
-# ---------------------------
-# KPI Cards
-# ---------------------------
-col1, col2, col3 = st.columns(3)
+    with col1:
+        credit_score = st.number_input("Credit Score", 300, 900, 650)
+        age = st.number_input("Age", 18, 100, 35)
+        tenure = st.number_input("Tenure (Years)", 0, 10, 3)
 
-with col1:
-    st.metric("Total Customers", data.shape[0])
+    with col2:
+        balance = st.number_input("Balance", 0.0, 300000.0, 50000.0)
+        products = st.number_input("No. of Products", 1, 4, 1)
+        salary = st.number_input("Estimated Salary", 0.0, 200000.0, 60000.0)
 
-with col2:
-    st.metric("Churn Rate", f"{data.Exited.mean()*100:.2f}%")
+    with col3:
+        has_card = st.selectbox("Has Credit Card", ["Yes", "No"])
+        active = st.selectbox("Is Active Member", ["Yes", "No"])
+        gender = st.selectbox("Gender", ["Male", "Female"])
 
-with col3:
-    st.metric("Model Confidence", f"{churn_prob*100:.2f}%")
+    if st.button("🔍 Predict Churn"):
+        data = np.array([[
+            credit_score,
+            age,
+            tenure,
+            balance,
+            products,
+            1 if has_card == "Yes" else 0,
+            1 if active == "Yes" else 0,
+            salary
+        ]])
 
-# ---------------------------
-# Prediction Result
-# ---------------------------
-st.subheader("🔮 Prediction Result")
+        data_scaled = scaler.transform(data)
+        prob = model.predict(data_scaled)[0][0]
 
-if churn_prob > 0.5:
-    st.error(f"⚠ Customer is likely to CHURN ({churn_prob*100:.2f}%)")
-else:
-    st.success(f"✅ Customer will NOT churn ({churn_prob*100:.2f}%)")
+        churn = "Yes" if prob > 0.5 else "No"
 
-# ---------------------------
-# Probability Gauge
-# ---------------------------
-fig = go.Figure(go.Indicator(
-    mode="gauge+number",
-    value=churn_prob * 100,
-    title={"text": "Churn Probability (%)"},
-    gauge={
-        "axis": {"range": [0, 100]},
-        "bar": {"color": "red"},
-        "steps": [
-            {"range": [0, 50], "color": "lightgreen"},
-            {"range": [50, 100], "color": "pink"}
-        ],
-    }
-))
-st.plotly_chart(fig, use_container_width=True)
+        st.subheader("📌 Result")
+        st.metric("Churn Probability", f"{prob:.2%}")
+        st.success(f"Churn Prediction: {churn}")
 
-# ---------------------------
-# Data Analysis Section
-# ---------------------------
-st.subheader("📈 Dataset Insights")
+# -----------------------------
+# BATCH PREDICTION
+# -----------------------------
+elif menu == "Batch Prediction":
+    st.title("📁 Batch Prediction (CSV Upload)")
 
-col4, col5 = st.columns(2)
+    uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
 
-with col4:
-    fig_age = px.histogram(data, x="Age", color="Exited", title="Age vs Churn")
-    st.plotly_chart(fig_age, use_container_width=True)
+    if uploaded_file:
+        df = pd.read_csv(uploaded_file)
+        st.subheader("📄 Uploaded Data")
+        st.dataframe(df.head())
 
-with col5:
-    fig_balance = px.box(data, x="Exited", y="Balance", title="Balance Distribution")
-    st.plotly_chart(fig_balance, use_container_width=True)
+        df_scaled = scaler.transform(df)
+        probs = model.predict(df_scaled).flatten()
 
-# ---------------------------
-# SHAP Explainability
-# ---------------------------
-st.subheader("🧠 Model Explainability (SHAP)")
+        df["Churn_Probability"] = probs
+        df["Churn_Prediction"] = (probs > 0.5).map({True: "Yes", False: "No"})
 
-explainer = shap.Explainer(model, scaled_input)
-shap_values = explainer(scaled_input)
+        st.subheader("✅ Prediction Results")
+        st.dataframe(df)
 
-st.write("Feature contribution to churn prediction:")
-shap.plots.waterfall(shap_values[0], show=False)
-st.pyplot(bbox_inches='tight')
+        csv = df.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            "⬇ Download Results",
+            csv,
+            "churn_predictions.csv",
+            "text/csv"
+        )
+
+# -----------------------------
+# INSIGHTS
+# -----------------------------
+elif menu == "Insights":
+    st.title("📈 Churn Insights")
+
+    st.info("Upload batch data to see insights")
+
+    uploaded_file = st.file_uploader("Upload CSV with Predictions", type=["csv"])
+
+    if uploaded_file:
+        df = pd.read_csv(uploaded_file)
+
+        churn_rate = (df["Churn_Prediction"] == "Yes").mean() * 100
+
+        col1, col2 = st.columns(2)
+        col1.metric("Churn Rate", f"{churn_rate:.2f}%")
+        col2.metric("Total Customers", len(df))
+
+        fig = px.histogram(
+            df,
+            x="Churn_Probability",
+            color="Churn_Prediction",
+            nbins=20,
+            title="Churn Probability Distribution"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+# -----------------------------
+# FOOTER
+# -----------------------------
+st.markdown("---")
+st.caption("© Deep Learning Churn Model | Streamlit Dashboard")
