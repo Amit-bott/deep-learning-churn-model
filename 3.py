@@ -1,89 +1,84 @@
-# import pandas as pd
-# import numpy as np
-# import joblib
+import pandas as pd
+import joblib
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.callbacks import EarlyStopping
 
-# from sklearn.model_selection import train_test_split
-# from sklearn.preprocessing import StandardScaler
-# from sklearn.metrics import accuracy_score
+# -------------------------
+# LOAD DATA
+# -------------------------
+df = pd.read_csv("data/Churn_Modelling.csv")
 
-# from tensorflow.keras.models import Sequential
-# from tensorflow.keras.layers import Dense, Dropout
-# from tensorflow.keras.callbacks import EarlyStopping
+df.drop(["RowNumber", "CustomerId", "Surname"], axis=1, inplace=True)
 
-# # -----------------------------
-# # LOAD DATA
-# # -----------------------------
-# df = pd.read_csv("Churn_Modelling.csv")
+df["Gender"] = df["Gender"].map({"Male": 1, "Female": 0})
+df = pd.get_dummies(df, columns=["Geography"], drop_first=True)
 
-# # Drop unused columns
-# df = df.drop(["RowNumber", "CustomerId", "Surname"], axis=1)
+X = df.drop("Exited", axis=1)
+y = df["Exited"]
 
-# # Encode categorical
-# df["Gender"] = df["Gender"].map({"Male": 1, "Female": 0})
-# df = pd.get_dummies(df, columns=["Geography"], drop_first=True)
+# -------------------------
+# SPLIT DATA
+# -------------------------
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
 
-# X = df.drop("Exited", axis=1)
-# y = df["Exited"]
+# -------------------------
+# SCALE FEATURES
+# -------------------------
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
 
-# # -----------------------------
-# # TRAIN TEST SPLIT
-# # -----------------------------
-# X_train, X_test, y_train, y_test = train_test_split(
-#     X, y, test_size=0.2, random_state=42
-# )
+joblib.dump(scaler, "models/scaler.pkl")
 
-# # -----------------------------
-# # SCALING
-# # -----------------------------
-# scaler = StandardScaler()
-# X_train = scaler.fit_transform(X_train)
-# X_test = scaler.transform(X_test)
+# -------------------------
+# ANN MODEL
+# -------------------------
+model = Sequential([
+    Dense(64, activation="relu", input_shape=(X_train.shape[1],)),
+    Dropout(0.3),
+    Dense(32, activation="relu"),
+    Dropout(0.2),
+    Dense(1, activation="sigmoid")
+])
 
-# joblib.dump(scaler, "scaler.pkl")
+model.compile(
+    optimizer="adam",
+    loss="binary_crossentropy",
+    metrics=["accuracy"]
+)
 
-# # -----------------------------
-# # ANN MODEL
-# # -----------------------------
-# model = Sequential([
-#     Dense(32, activation="relu", input_shape=(X_train.shape[1],)),
-#     Dropout(0.3),
-#     Dense(16, activation="relu"),
-#     Dropout(0.2),
-#     Dense(1, activation="sigmoid")
-# ])
+early_stop = EarlyStopping(
+    monitor="val_loss",
+    patience=5,
+    restore_best_weights=True
+)
 
-# model.compile(
-#     optimizer="adam",
-#     loss="binary_crossentropy",
-#     metrics=["accuracy"]
-# )
+model.fit(
+    X_train,
+    y_train,
+    validation_split=0.1,
+    epochs=50,
+    batch_size=32,
+    callbacks=[early_stop],
+    verbose=1
+)
 
-# early_stop = EarlyStopping(
-#     monitor="val_loss",
-#     patience=5,
-#     restore_best_weights=True
-# )
+# -------------------------
+# SAVE MODEL
+# -------------------------
+model.save("models/churn_model.h5")
 
-# model.fit(
-#     X_train,
-#     y_train,
-#     validation_split=0.1,
-#     epochs=50,
-#     batch_size=32,
-#     callbacks=[early_stop],
-#     verbose=1
-# )
+# -------------------------
+# EVALUATION
+# -------------------------
+y_pred = (model.predict(X_test) > 0.5).astype(int)
+acc = accuracy_score(y_test, y_pred)
 
-# # -----------------------------
-# # SAVE MODEL
-# # -----------------------------
-# model.save("model.h5")
-
-# # -----------------------------
-# # EVALUATION
-# # -----------------------------
-# y_pred = (model.predict(X_test) > 0.5).astype(int)
-# acc = accuracy_score(y_test, y_pred)
-
-# print("✅ Model Training Complete")
-# print(f"🎯 Accuracy: {acc:.2f}")
+print("✅ Model trained successfully")
+print(f"🎯 Accuracy: {acc:.2%}")
