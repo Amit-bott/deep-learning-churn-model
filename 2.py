@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import joblib
-from tensorflow.keras.models import load_model
+# from tensorflow.keras.models import load_model
 import plotly.express as px
 
 # -------------------------
@@ -16,7 +16,7 @@ st.set_page_config(
 
 @st.cache_resource
 def load_assets():
-    model = load_model("models/churn_model.h5")
+    # model = load_model("models/churn_model.h5")
     scaler = joblib.load("models/scaler.pkl")
     return model, scaler
 
