@@ -9,7 +9,7 @@ RowNumber,CustomerId,Surname,CreditScore,Geography,Gender,Age,Tenure,Balance,Num
 8,15656148,Obinna,376,Germany,Female,29,4,115046.74,4,1,0,119346.88,1
 9,15792365,He,501,France,Male,44,4,142051.07,2,0,1,74940.5,0
 10,15592389,H?,684,France,Male,27,2,134603.88,1,1,1,71725.73,0
-11,15767821,Bearce,528,France,Male,31,6,102016.72,2,0,0,80181.12,0
+11,15767821,Bearce,528,France,Male,31,6,102016.72,2,0,0,80181.12,0     
 12,15737173,Andrews,497,Spain,Male,24,3,0,2,1,0,76390.01,0   
 13,15632264,Kay,476,France,Female,34,10,0,2,1,0,26260.98,0
 14,15691483,Chin,549,France,Female,25,5,0,2,0,0,190857.79,0
