@@ -5,9 +5,7 @@ import joblib
 # from tensorflow.keras.models import load_model
 import plotly.express as px
 
-# -------------------------
-# CONFIG
-# -------------------------
+
 st.set_page_config(
     page_title="Customer Churn Prediction",
     page_icon="📊",
