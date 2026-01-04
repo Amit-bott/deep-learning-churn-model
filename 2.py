@@ -2,10 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import joblib
-# from tensorflow.keras.models import load_model
 import plotly.express as px
-
-
 st.set_page_config(
     page_title="Customer Churn Prediction",
     page_icon="📊",
