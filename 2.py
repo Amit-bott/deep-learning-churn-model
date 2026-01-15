@@ -17,9 +17,6 @@ def load_assets():
 
 model, scaler = load_assets()
 
-# -------------------------
-# SIDEBAR
-# -------------------------
 st.sidebar.title("📌 Navigation")
 menu = st.sidebar.radio(
     "Go to",
