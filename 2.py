@@ -23,9 +23,7 @@ menu = st.sidebar.radio(
     ["Home", "Single Prediction", "Batch Prediction", "Insights"]
 )
 
-# -------------------------
-# HOME
-# -------------------------
+
 if menu == "Home":
     st.title("📊 Customer Churn Prediction System")
 
@@ -45,9 +43,7 @@ if menu == "Home":
     ✔ Production-ready UI  
     """)
 
-# -------------------------
-# SINGLE PREDICTION
-# -------------------------
+
 elif menu == "Single Prediction":
     st.title("🔮 Single Customer Prediction")
 
@@ -83,9 +79,7 @@ elif menu == "Single Prediction":
         else:
             st.success("✅ Customer will stay")
 
-# -------------------------
-# BATCH PREDICTION
-# -------------------------
+
 elif menu == "Batch Prediction":
     st.title("📁 Batch Prediction")
 
@@ -110,9 +104,7 @@ elif menu == "Batch Prediction":
             "churn_predictions.csv"
         )
 
-# -------------------------
-# INSIGHTS
-# -------------------------
+
 elif menu == "Insights":
     st.title("📈 Churn Insights")
 
@@ -132,8 +124,6 @@ elif menu == "Insights":
         )
         st.plotly_chart(fig, use_container_width=True)
 
-# -------------------------
-# FOOTER
-# -------------------------
+
 st.markdown("---")
 st.caption("© Deep Learning ANN | Customer Churn Prediction")
