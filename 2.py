@@ -127,5 +127,3 @@ elif menu == "Insights":
 
 st.markdown("---")
 st.caption("© Deep Learning ANN | Customer Churn Prediction")
-
-
