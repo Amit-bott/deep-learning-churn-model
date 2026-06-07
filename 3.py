@@ -77,7 +77,3 @@ acc = accuracy_score(y_test, y_pred)
 
 print("✅ Model trained successfully")
 print(f"🎯 Accuracy: {acc:.2%}")
-
-
-
-
